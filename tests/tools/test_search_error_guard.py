@@ -80,6 +80,24 @@ class TestSearchErrorGuard:
         assert res.error is None
         assert len(res.matches) == 5
 
+    def test_escaped_literal_parenthesis_has_backend_parity(self, method, tmp_path):
+        (tmp_path / "sample.py").write_text("def delete(self):\n")
+
+        res = _search(_ops(tmp_path), method, r"def delete\(", tmp_path)
+
+        assert res.error is None
+        assert len(res.matches) == 1
+        assert res.matches[0].content == "def delete(self):"
+
+    def test_alternation_has_backend_parity(self, method, tmp_path):
+        (tmp_path / "sample.py").write_text("foo\nbar\nbaz\n")
+
+        res = _search(_ops(tmp_path), method, r"foo|bar", tmp_path)
+
+        assert res.error is None
+        assert len(res.matches) == 2
+        assert [match.content for match in res.matches] == ["foo", "bar"]
+
     def test_hard_error_is_surfaced(self, method, match_tree):
         # An invalid regex makes rg/grep exit 2 with only diagnostics in
         # stdout. The guard MUST surface it — not return empty matches.
