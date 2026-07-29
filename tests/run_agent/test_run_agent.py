@@ -48,6 +48,37 @@ def _make_tool_defs(*names: str) -> list:
     ]
 
 
+def test_skip_memory_disables_memory_toolset_without_mutating_caller():
+    """A disabled memory store must not leave a callable memory schema."""
+    caller_disabled_toolsets = ["browser"]
+
+    with (
+        patch(
+            "run_agent.get_tool_definitions",
+            return_value=_make_tool_defs("web_search"),
+        ) as mock_get_tool_definitions,
+        patch("run_agent.check_toolset_requirements", return_value={}),
+        patch("run_agent.OpenAI"),
+        patch("hermes_logging.setup_logging"),
+    ):
+        agent = AIAgent(
+            api_key="test-key-1234567890",
+            base_url="http://localhost:1234/v1",
+            model="test-model",
+            disabled_toolsets=caller_disabled_toolsets,
+            quiet_mode=True,
+            skip_context_files=True,
+            skip_memory=True,
+        )
+
+    assert caller_disabled_toolsets == ["browser"]
+    assert agent.disabled_toolsets == ["browser", "memory"]
+    assert mock_get_tool_definitions.call_args.kwargs["disabled_toolsets"] == [
+        "browser",
+        "memory",
+    ]
+
+
 def test_is_destructive_command_treats_cp_as_mutating():
     assert run_agent._is_destructive_command("cp .env.local .env") is True
 

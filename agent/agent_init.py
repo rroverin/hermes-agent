@@ -621,6 +621,10 @@ def init_agent(
     agent.provider_data_collection = provider_data_collection
     agent.openrouter_min_coding_score = openrouter_min_coding_score
 
+    # Do not advertise memory when its backing store is disabled.
+    if skip_memory and "memory" not in (disabled_toolsets or []):
+        disabled_toolsets = [*(disabled_toolsets or []), "memory"]
+
     # Store toolset filtering options
     agent.enabled_toolsets = enabled_toolsets
     agent.disabled_toolsets = disabled_toolsets
